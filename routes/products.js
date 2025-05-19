@@ -2,9 +2,10 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/Multer");
 const productsController = require("../controllers/productsController");
+const checkAuth = require("../middleware/check-auth");
 
 // Route to create a new product
-router.post("/", upload.single("image"), productsController.createProduct);
+router.post("/", checkAuth,upload.single("image"), productsController.createProduct);
 
 // Route to get all products
 router.get("/", productsController.getAllProducts);

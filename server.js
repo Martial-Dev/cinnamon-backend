@@ -32,7 +32,7 @@ const checkAuth = require("./middleware/check-auth.js");
 // Use route modules
 app.use("/api/users", userRoutes);
 app.use("/api/login", loginRoutes);
-app.use("/api/products", checkAuth, productRoutes);
+app.use("/api/products", productRoutes);
 app.use("/uploads", checkAuth, imageRoutes);
 app.use("/api/invoice", checkAuth, invoiceRoutes);
 app.use("/api/cart", checkAuth, cartRoutes);
