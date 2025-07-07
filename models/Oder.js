@@ -19,6 +19,12 @@ const orderSchema = new mongoose.Schema({
     enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"],
     default: "Pending",
   },
+  paymentStatus: {
+    type: String,
+    enum: ["Not Paid", "Pending", "Paid"],
+    default: "Pending",
+  },
+  proofImageUrl: { type: String }, // New field for proof image URL
   shippingAddress: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
