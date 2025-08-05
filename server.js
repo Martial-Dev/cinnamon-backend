@@ -26,6 +26,7 @@ const loginRoutes = require("./routes/login.js");
 const cartRoutes = require("./routes/cart.js");
 const orderRoutes = require("./routes/order.js");
 const contactRoutes = require("./routes/contact.js");
+const recipeRoutes = require("./routes/recipe.js");
 
 const checkAuth = require("./middleware/check-auth.js");
 
@@ -38,6 +39,7 @@ app.use("/api/invoice", checkAuth, invoiceRoutes);
 app.use("/api/cart", checkAuth, cartRoutes);
 app.use("/api/orders", checkAuth, orderRoutes);
 app.use("/api/contact",contactRoutes);
+app.use("/api/recipes", recipeRoutes);
 
 // Start server
 const PORT = process.env.PORT || 8080;
