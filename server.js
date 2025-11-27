@@ -13,9 +13,13 @@ app.use(cors({ origin: "*" }));
 
 console.log("MONGODB_URI:", process.env.MONGODB_URI);
 // Database connection
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("MongoDB connected successfully"))
-  .catch(err => console.error("MongoDB connection error:", err));
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 // Import route modules
 const userRoutes = require("./routes/users.js");
@@ -25,6 +29,7 @@ const invoiceRoutes = require("./routes/invoice.js");
 const loginRoutes = require("./routes/login.js");
 const cartRoutes = require("./routes/cart.js");
 const orderRoutes = require("./routes/order.js");
+const reviewRoutes = require("./routes/review.js");
 const contactRoutes = require("./routes/contact.js");
 const recipeRoutes = require("./routes/recipe.js");
 
@@ -38,7 +43,8 @@ app.use("/uploads", checkAuth, imageRoutes);
 app.use("/api/invoice", checkAuth, invoiceRoutes);
 app.use("/api/cart", checkAuth, cartRoutes);
 app.use("/api/orders", checkAuth, orderRoutes);
-app.use("/api/contact",contactRoutes);
+app.use("/api/contact", contactRoutes);
+app.use("/api/reviews", reviewRoutes);
 app.use("/api/recipes", recipeRoutes);
 
 // Start server

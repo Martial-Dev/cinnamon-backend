@@ -7,7 +7,10 @@ const checkAuth = (req, res, next) => {
       return res.status(401).json({ message: "Auth failed" });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userData = decoded;
+    req.userData = {
+      userId: decoded.userId,
+      role: decoded.role || "user",
+    };
     next();
   } catch (error) {
     return res.status(401).json({ message: "Auth failed" });
