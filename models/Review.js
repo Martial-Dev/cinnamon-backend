@@ -60,14 +60,4 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
-reviewSchema.set("toJSON", {
-  virtuals: true,
-  versionKey: false,
-  transform(doc, ret) {
-    ret.id = ret._id;
-    delete ret._id;
-    return ret;
-  },
-});
-
 module.exports = mongoose.model("Review", reviewSchema);
