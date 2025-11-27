@@ -140,94 +140,83 @@ router.delete("/:id", async (req, res) => {
 
 //recover password
 router.post("/recover-password", async (req, res) => {
-  const { email } = req.body;
+  const { email } = req.body || {};
+
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ message: "Invalid request" });
+  }
+
+  const { JWT_SECRET, CLIENT_URL, EMAIL_FROM } = process.env;
+
+  if (!JWT_SECRET || !CLIENT_URL || !EMAIL_FROM) {
+    console.error("Missing required env vars for recover-password");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
 
   try {
-    // Validate environment and configuration early to provide clearer errors
-    if (!process.env.JWT_SECRET) {
-      console.error("JWT_SECRET is not set in environment");
-      return res
-        .status(500)
-        .send({ message: "Server configuration error (missing JWT_SECRET)" });
-    }
-
-    // Find the user
     const user = await User.findOne({ email });
+
     if (!user) {
-      return res.status(404).send({ message: "User not found" });
+      return res.status(200).json({
+        message: "If an account with that email exists, an email will be sent.",
+      });
     }
 
-    // Generate a JWT token for password recovery
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
-    );
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-    // Build client URL safely. Prefer explicit CLIENT_URL env var, fall back to clientUrl or default
-    const rawClientUrl =
-      process.env.CLIENT_URL ||
-      process.env.clientUrl ||
-      "http://localhost:4200";
-    const clientUrl = String(rawClientUrl).replace(/\/$/, "");
+    const clientUrl = CLIENT_URL.replace(/\/$/, "");
     const recoveryLink = `${clientUrl}/reset-password?token=${token}`;
 
     const mailOptions = {
-      from: process.env.EMAIL_FROM || "canelaceylonbycinnamoninc@gmail.com",
+      from: EMAIL_FROM,
       to: email,
       subject: "Password Recovery",
-      text: `Click the following link to recover your password: ${recoveryLink}`,
+      text: `Use this link to reset your password: ${recoveryLink}`,
+      html: `<p>Use this link to reset your password:</p><p><a href="${recoveryLink}">${recoveryLink}</a></p>`,
     };
 
-    // Verify transporter configuration before sending to catch auth errors early
     try {
       if (typeof transporter.verify === "function") {
         await transporter.verify();
       }
-    } catch (verifyErr) {
-      console.error("Mail transporter verification failed:", verifyErr);
-      return res
-        .status(500)
-        .send({ message: "Email service not configured properly" });
+    } catch (err) {
+      console.error("Mail transporter verification failed:", err);
+      return res.status(503).json({ message: "Email service unavailable" });
     }
 
-    // Send mail with a small timeout to avoid long-hanging requests
     const sendMailPromise = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        const err = new Error("Mail send timeout");
-        err.code = "MAIL_TIMEOUT";
-        reject(err);
-      }, 15000); // 15s timeout
+      const timer = setTimeout(() => reject(new Error("MAIL_TIMEOUT")), 15000);
 
       transporter.sendMail(mailOptions, (error, info) => {
         clearTimeout(timer);
-        if (error) return reject(error);
-        resolve(info);
+        if (error) reject(error);
+        else resolve(info);
       });
     });
 
     try {
-      const info = await sendMailPromise;
-      // In development, include the recovery link in the response for easy testing
-      const devResponse =
-        process.env.NODE_ENV !== "production" ? { recoveryLink } : {};
-      return res.send({
-        message: "Recovery email sent successfully",
-        ...devResponse,
+      await sendMailPromise;
+
+      console.info("Password recovery email sent:", {
+        to: email,
       });
-    } catch (sendErr) {
-      console.error("Error sending recovery email:", sendErr);
-      return res.status(500).send({ message: "Failed to send email" });
+
+      return res.status(200).json({
+        message: "If an account with that email exists, an email will be sent.",
+      });
+    } catch (err) {
+      console.error("Error sending recovery email:", err);
+      return res.status(503).json({ message: "Email service unavailable" });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Server error" });
+  } catch (err) {
+    console.error("Recover-password error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 });
-// Reset password
 
+// Reset password
 router.post("/reset-password", async (req, res) => {
   const { token, password } = req.body;
 
