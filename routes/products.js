@@ -22,6 +22,8 @@ router.post("/", checkAuth, upload.single("image"), async (req, res) => {
       quantity,
       price,
       availability,
+      type,
+      discount,
     } = req.body;
 
     const product = new Product({
@@ -31,6 +33,8 @@ router.post("/", checkAuth, upload.single("image"), async (req, res) => {
       quantity,
       price,
       availability,
+      type: type || 'standard',
+      discount: discount || 0,
     });
 
     await product.save();
@@ -64,9 +68,17 @@ router.get("/:id", async (req, res) => {
 });
 
 // Update a product by ID
-router.put("/:id", async (req, res) => {
+router.put("/:id", checkAuth, upload.single("image"), async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    let updateData = req.body;
+    if (req.file) {
+      updateData.productImage = await uploadImageToFirebase(
+        req.file.buffer,
+        req.file.originalname,
+        "products"
+      );
+    }
+    const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
     });
     if (!product) {
@@ -79,7 +91,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete a product by ID
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", checkAuth, async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
