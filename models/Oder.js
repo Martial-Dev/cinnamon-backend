@@ -11,22 +11,53 @@ const orderSchema = new mongoose.Schema({
       },
       quantity: { type: Number, required: true, min: 1 },
       price: { type: Number, required: true },
+      productName: { type: String },
+      image: { type: String },
     },
   ],
   total: { type: Number, required: true },
-  status: {
+
+  // Payment Information
+  paymentMethod: {
     type: String,
-    enum: ["Pending", "x", "Shipped", "Delivered", "Cancelled"],
-    default: "Pending",
+    enum: ["online", "bank_transfer", "cash_on_delivery"],
+    // Default kept undefined to preserve existing behavior where not set
   },
   paymentStatus: {
     type: String,
-    enum: ["Not Paid", "Pending", "Paid"],
+    enum: ["Not Paid", "Pending", "Paid", "Failed", "Refunded"],
     default: "Pending",
   },
-  proofImageUrl: { type: String }, // New field for proof image URL
+
+  // Payable Payment Gateway Fields (for online payments)
+  payableTransactionId: { type: String, index: true, sparse: true },
+  payableOrderId: { type: String },
+  invoiceId: { type: String, unique: true, sparse: true },
+  paymentScheme: { type: String },
+  paymentType: { type: Number },
+  transactionType: { type: String },
+
+  // Bank Transfer proof fields
+  proofImageUrl: { type: String },
+  proofPdfUrl: { type: String },
+
+  // Order Fulfillment Status
+  status: {
+    type: String,
+    enum: ["Pending", "x", "Processing", "Shipped", "Delivered", "Cancelled"],
+    default: "Pending",
+  },
+
   shippingAddress: { type: String, required: true },
+
+  // Timestamps
+  paymentConfirmedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
+
+// Indexes helpful for webhook lookups
+orderSchema.index({ payableTransactionId: 1 });
+orderSchema.index({ invoiceId: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

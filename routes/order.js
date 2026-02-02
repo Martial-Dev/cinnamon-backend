@@ -31,8 +31,16 @@ router.post(
         items = JSON.parse(items);
       }
 
+      // Extract payment-related fields
+      const paymentMethod = req.body.paymentMethod || "bank_transfer";
+      const transactionId = req.body.transactionId; // payableTransactionId
+      const payableOrderId = req.body.payableOrderId;
+      const invoiceId = req.body.invoiceId;
+      const incomingPaymentStatus = req.body.paymentStatus; // e.g., Paid for online
+
       // Upload proof image or PDF if provided
       let proofImageUrl = "";
+      let proofPdfUrl = "";
       let file = null;
       if (req.files && req.files.proofImage && req.files.proofImage[0]) {
         file = req.files.proofImage[0];
@@ -45,6 +53,35 @@ router.post(
           file.originalname,
           "order-proofs"
         );
+        // If it's a PDF, store also in proofPdfUrl
+        if ((file.originalname || "").toLowerCase().endsWith(".pdf")) {
+          proofPdfUrl = proofImageUrl;
+        }
+      }
+
+      // For online payments, check idempotency if payment already confirmed
+      if (paymentMethod === "online" && transactionId) {
+        const confirmedPayment = await Order.findOne({
+          payableTransactionId: transactionId,
+          paymentStatus: "Paid",
+        });
+        if (confirmedPayment) {
+          return res.status(200).json({
+            message: "Order already created",
+            orderId: confirmedPayment._id,
+          });
+        }
+      }
+
+      // Check duplicate invoiceId
+      if (invoiceId) {
+        const existingInvoice = await Order.findOne({ invoiceId });
+        if (existingInvoice) {
+          return res.status(200).json({
+            message: "Order already exists",
+            orderId: existingInvoice._id,
+          });
+        }
       }
 
       // Build order data
@@ -54,8 +91,30 @@ router.post(
         total: req.body.total,
         shippingAddress: user.address,
         proofImageUrl,
-        paymentStatus: "Pending",
+        proofPdfUrl,
+        paymentMethod,
+        paymentStatus:
+          incomingPaymentStatus ||
+          (paymentMethod === "bank_transfer" ? "Pending" : "Paid"),
+        // default status
+        status: "Pending",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+
+      if (paymentMethod === "online") {
+        orderData.payableTransactionId = transactionId || undefined;
+        orderData.payableOrderId = payableOrderId || undefined;
+        orderData.invoiceId = invoiceId || undefined;
+        if (orderData.paymentStatus === "Paid") {
+          orderData.paymentConfirmedAt = new Date();
+        }
+      }
+
+      if (paymentMethod === "bank_transfer") {
+        // Ensure bank transfers are pending until manual verification
+        orderData.paymentStatus = "Pending";
+      }
 
       // Create and save order
       const order = new Order(orderData);

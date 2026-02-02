@@ -23,15 +23,22 @@ exports.loginUser = async (req, res) => {
         expiresIn: "1h",
       }
     );
+
     res.json({
       auth: true,
       token,
       userId: user._id,
       role: user.role,
       expiresIn: 3600,
+      email: user.email,
+      phone: user.contactNo || user.phone || "",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      userName: user.userName,
     });
+    console.log(res);
   } catch (error) {
-    console.error(error); // Add this line for debugging
+    console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
