@@ -11,7 +11,7 @@ router.get("/debug/config", async (req, res) => {
     const env = {
       MONGODB_URI: !!process.env.MONGODB_URI,
       JWT_SECRET: !!process.env.JWT_SECRET,
-      CLIENT_URL: !!(process.env.CLIENT_URL || process.env.clientUrl),
+      CLIENT_URL: !!process.env.CLIENT_URL,
       EMAIL_FROM: !!process.env.EMAIL_FROM,
       EMAIL_PASSWORD: !!process.env.EMAIL_PASSWORD,
     };
@@ -82,7 +82,7 @@ router.post("/", async (req, res) => {
       .status(201)
       .json({ message: "User added successfully", user_id: savedUser._id });
   } catch (err) {
-    console.error("User creation error:", err); // Add this line
+    console.error("User creation error:", err);
     if (err.name === "ValidationError") {
       return res.status(400).json({ error: err.message });
     }
@@ -95,7 +95,7 @@ router.get("/:id", async (req, res) => {
   const userId = req.params.id;
 
   try {
-    const user = await User.findById(userId).select("-password"); // Exclude password from response
+    const user = await User.findById(userId).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -138,7 +138,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-//recover password
+// Recover password
 router.post("/recover-password", async (req, res) => {
   const { email } = req.body || {};
 
@@ -166,8 +166,7 @@ router.post("/recover-password", async (req, res) => {
       expiresIn: "1h",
     });
 
-    const clientUrl = CLIENT_URL.replace(/\/$/, "");
-    const recoveryLink = `${clientUrl}/reset-password?token=${token}`;
+    const recoveryLink = `${CLIENT_URL}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: EMAIL_FROM,
@@ -235,7 +234,7 @@ router.post("/reset-password", async (req, res) => {
     // Update the password
     await User.updateOne(
       { _id: user._id },
-      { $set: { password: hashedPassword } }
+      { $set: { password: hashedPassword } },
     );
 
     res.send({ message: "Password reset successfully" });
