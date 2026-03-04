@@ -22,7 +22,9 @@ const ensureTrailingSlashRemoved = (url) =>
   String(url || "").replace(/\/+$/, "");
 
 const isPlaceholderValue = (value) => {
-  const normalized = String(value || "").trim().toLowerCase();
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
   return (
     !normalized ||
     normalized.includes("your_") ||
@@ -177,7 +179,7 @@ router.post("/initiate", async (req, res) => {
     const requestBody = {
       invoiceId,
       merchantKey: config.merchantKey,
-      merchantToken: config.merchantToken,
+      // merchantToken: config.merchantToken, // removed: Payable rejects this field
       integrationType:
         integrationType || process.env.PAYABLE_INTEGRATION_TYPE || "WEB",
       integrationVersion:
@@ -198,7 +200,7 @@ router.post("/initiate", async (req, res) => {
       paymentType: paymentType || 1,
       checkValue: getCheckValue({
         merchantKey: config.merchantKey,
-        merchantToken: config.merchantToken,
+        merchantToken: config.merchantToken, // keep here for signature generation
         invoiceId,
         amount: finalAmount,
         currencyCode: finalCurrencyCode,
