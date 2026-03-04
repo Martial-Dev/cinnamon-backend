@@ -177,6 +177,11 @@ router.post("/initiate", async (req, res) => {
     const safeReturnUrl = isHttpsUrl(returnUrl)
       ? returnUrl
       : process.env.PAYMENT_RETURN_URL || "";
+    const safeRefererUrl = isHttpsUrl(process.env.CLIENT_URL)
+      ? process.env.CLIENT_URL
+      : isHttpsUrl(refererUrl)
+        ? refererUrl
+        : "";
 
     const requestBody = {
       invoiceId,
@@ -188,7 +193,7 @@ router.post("/initiate", async (req, res) => {
         integrationVersion ||
         process.env.PAYABLE_INTEGRATION_VERSION ||
         "1.0.1",
-      refererUrl: refererUrl || process.env.CLIENT_URL || "",
+      refererUrl: safeRefererUrl,
       logoUrl: logoUrl || undefined,
       webhookUrl: safeWebhookUrl,
       returnUrl: safeReturnUrl,
