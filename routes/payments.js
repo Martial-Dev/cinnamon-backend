@@ -46,6 +46,11 @@ const parseBoolean = (value, fallbackValue = false) => {
 
 const isHttpsUrl = (value) => /^https:\/\//i.test(String(value || "").trim());
 
+const getSdkScriptUrl = (testMode) =>
+  testMode
+    ? "https://sandboxipgsdk.payable.lk/sdk/v4/payable-checkout.js"
+    : "https://ipgsdk.payable.lk/sdk/v4/payable-checkout.js";
+
 const getPayableConfig = (testModeInput) => {
   const defaultTestMode = parseBoolean(
     process.env.PAYABLE_DEFAULT_TEST_MODE,
@@ -106,6 +111,133 @@ const getCheckValue = ({
   const raw = `${merchantKey}|${invoiceId}|${amount}|${currencyCode}|${hashedToken}`;
   return toSha512Upper(raw);
 };
+
+router.post("/sdk-config", async (req, res) => {
+  try {
+    const config = getPayableConfig(req.body?.testMode);
+    if (!config.valid) {
+      return res.status(500).json({ error: { "err-message": config.error } });
+    }
+
+    const {
+      invoiceId,
+      logoUrl,
+      notifyUrl,
+      webhookUrl,
+      returnUrl,
+      amount,
+      currencyCode,
+      orderDescription,
+      customerFirstName,
+      customerLastName,
+      customerEmail,
+      customerMobilePhone,
+      paymentType,
+      billingAddressStreet,
+      billingAddressCity,
+      billingAddressCountry,
+      billingAddressPostcodeZip,
+      billingAddressStateProvince,
+      shippingContactFirstName,
+      shippingContactLastName,
+      shippingContactEmail,
+      shippingContactMobilePhone,
+      shippingAddressStreet,
+      shippingAddressCity,
+      shippingAddressCountry,
+      shippingAddressPostcodeZip,
+      shippingAddressStateProvince,
+      custom1,
+      custom2,
+    } = req.body || {};
+
+    if (
+      !invoiceId ||
+      !amount ||
+      !orderDescription ||
+      !customerFirstName ||
+      !customerLastName ||
+      !customerEmail ||
+      !customerMobilePhone ||
+      !billingAddressStreet ||
+      !billingAddressCity ||
+      !billingAddressCountry
+    ) {
+      return res.status(400).json({
+        status: 400,
+        error: {
+          "err-message":
+            "Missing required fields for SDK payment configuration.",
+        },
+      });
+    }
+
+    const finalCurrencyCode =
+      currencyCode || process.env.PAYABLE_CURRENCY || "LKR";
+    const finalAmount = Number(amount).toFixed(2);
+
+    const safeNotifyUrl = isHttpsUrl(notifyUrl)
+      ? notifyUrl
+      : isHttpsUrl(webhookUrl)
+        ? webhookUrl
+        : process.env.PAYMENT_WEBHOOK_URL || "";
+    const safeReturnUrl = isHttpsUrl(returnUrl)
+      ? returnUrl
+      : process.env.PAYMENT_RETURN_URL || "";
+
+    const payment = {
+      notifyUrl: safeNotifyUrl,
+      returnUrl: safeReturnUrl,
+      logoUrl: logoUrl || undefined,
+      merchantKey: config.merchantKey,
+      checkValue: getCheckValue({
+        merchantKey: config.merchantKey,
+        merchantToken: config.merchantToken,
+        invoiceId,
+        amount: finalAmount,
+        currencyCode: finalCurrencyCode,
+      }),
+      custom1: custom1 || undefined,
+      custom2: custom2 || undefined,
+      invoiceId,
+      orderDescription,
+      amount: finalAmount,
+      currencyCode: finalCurrencyCode,
+      paymentType: String(paymentType || 1),
+      customerFirstName,
+      customerLastName,
+      customerMobilePhone,
+      customerEmail,
+      billingAddressStreet,
+      billingAddressCity,
+      billingAddressCountry,
+      billingAddressPostcodeZip: billingAddressPostcodeZip || undefined,
+      billingAddressStateProvince: billingAddressStateProvince || undefined,
+      shippingContactFirstName: shippingContactFirstName || undefined,
+      shippingContactLastName: shippingContactLastName || undefined,
+      shippingContactEmail: shippingContactEmail || undefined,
+      shippingContactMobilePhone: shippingContactMobilePhone || undefined,
+      shippingAddressStreet: shippingAddressStreet || undefined,
+      shippingAddressCity: shippingAddressCity || undefined,
+      shippingAddressCountry: shippingAddressCountry || undefined,
+      shippingAddressPostcodeZip: shippingAddressPostcodeZip || undefined,
+      shippingAddressStateProvince: shippingAddressStateProvince || undefined,
+    };
+
+    return res.status(200).json({
+      sdkUrl: getSdkScriptUrl(config.testMode),
+      payment,
+      testMode: config.testMode,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      error: {
+        "err-message": "Failed to prepare SDK payment configuration",
+      },
+    });
+  }
+});
 
 router.post("/initiate", async (req, res) => {
   try {
@@ -186,17 +318,17 @@ router.post("/initiate", async (req, res) => {
     const requestBody = {
       invoiceId,
       merchantKey: config.merchantKey,
-      // merchantToken must NEVER be sent to Payable
+      // merchantToken: config.merchantToken, // removed: Payable rejects this field
       integrationType:
         integrationType || process.env.PAYABLE_INTEGRATION_TYPE || "WEB",
       integrationVersion:
         integrationVersion ||
         process.env.PAYABLE_INTEGRATION_VERSION ||
         "1.0.1",
-      refererUrl: safeRefererUrl,
+      refererUrl: refererUrl || process.env.CLIENT_URL || "",
       logoUrl: logoUrl || undefined,
-      webhookUrl: safeWebhookUrl,
-      returnUrl: safeReturnUrl,
+      webhookUrl: webhookUrl || process.env.PAYMENT_WEBHOOK_URL || "",
+      returnUrl: returnUrl || process.env.PAYMENT_RETURN_URL || "",
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       orderDescription,
@@ -207,7 +339,7 @@ router.post("/initiate", async (req, res) => {
       paymentType: paymentType || 1,
       checkValue: getCheckValue({
         merchantKey: config.merchantKey,
-        merchantToken: config.merchantToken,
+        merchantToken: config.merchantToken, // keep here for signature generation
         invoiceId,
         amount: finalAmount,
         currencyCode: finalCurrencyCode,
