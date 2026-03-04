@@ -30,6 +30,7 @@ const loginRoutes = require("./routes/login.js");
 const cartRoutes = require("./routes/cart.js");
 const orderRoutes = require("./routes/order.js");
 const orderWebhookRoutes = require("./routes/order_webhook.js");
+const paymentRoutes = require("./routes/payments.js");
 const reviewRoutes = require("./routes/review.js");
 const contactRoutes = require("./routes/contact.js");
 const recipeRoutes = require("./routes/recipe.js");
@@ -44,6 +45,7 @@ app.use("/api/products", productRoutes);
 app.use("/uploads", checkAuth, imageRoutes);
 app.use("/api/invoice", checkAuth, invoiceRoutes);
 app.use("/api/cart", checkAuth, cartRoutes);
+app.use("/api/payments", paymentRoutes);
 // Expose webhook without auth BEFORE protecting other order routes
 app.use("/api/orders", orderWebhookRoutes);
 app.use("/api/orders", checkAuth, orderRoutes);
