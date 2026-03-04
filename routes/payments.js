@@ -51,6 +51,8 @@ const parseBoolean = (value, fallbackValue = false) => {
   return fallbackValue;
 };
 
+const isHttpsUrl = (value) => /^https:\/\//i.test(String(value || "").trim());
+
 const getPayableConfig = (testModeInput) => {
   const defaultTestMode = parseBoolean(
     process.env.PAYABLE_DEFAULT_TEST_MODE,
@@ -176,10 +178,17 @@ router.post("/initiate", async (req, res) => {
       currencyCode || process.env.PAYABLE_CURRENCY || "LKR";
     const finalAmount = Number(amount).toFixed(2);
 
+    const safeWebhookUrl = isHttpsUrl(webhookUrl)
+      ? webhookUrl
+      : process.env.PAYMENT_WEBHOOK_URL || "";
+    const safeReturnUrl = isHttpsUrl(returnUrl)
+      ? returnUrl
+      : process.env.PAYMENT_RETURN_URL || "";
+
     const requestBody = {
       invoiceId,
       merchantKey: config.merchantKey,
-      // merchantToken: config.merchantToken, // removed: Payable rejects this field
+      // merchantToken must NEVER be sent to Payable
       integrationType:
         integrationType || process.env.PAYABLE_INTEGRATION_TYPE || "WEB",
       integrationVersion:
@@ -188,8 +197,8 @@ router.post("/initiate", async (req, res) => {
         "1.0.1",
       refererUrl: refererUrl || process.env.CLIENT_URL || "",
       logoUrl: logoUrl || undefined,
-      webhookUrl: webhookUrl || process.env.PAYMENT_WEBHOOK_URL || "",
-      returnUrl: returnUrl || process.env.PAYMENT_RETURN_URL || "",
+      webhookUrl: safeWebhookUrl,
+      returnUrl: safeReturnUrl,
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       orderDescription,
@@ -200,7 +209,7 @@ router.post("/initiate", async (req, res) => {
       paymentType: paymentType || 1,
       checkValue: getCheckValue({
         merchantKey: config.merchantKey,
-        merchantToken: config.merchantToken, // keep here for signature generation
+        merchantToken: config.merchantToken,
         invoiceId,
         amount: finalAmount,
         currencyCode: finalCurrencyCode,
@@ -220,6 +229,9 @@ router.post("/initiate", async (req, res) => {
       shippingAddressPostcodeZip: shippingAddressPostcodeZip || undefined,
       shippingAddressStateProvince: shippingAddressStateProvince || undefined,
     };
+
+    // hard safety: strip forbidden field even if added elsewhere
+    delete requestBody.merchantToken;
 
     const response = await axios.post(`${config.apiBase}/`, requestBody, {
       headers: {
