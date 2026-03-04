@@ -11,13 +11,6 @@ const toSha512Upper = (value) =>
     .digest("hex")
     .toUpperCase();
 
-const toMd5Upper = (value) =>
-  crypto
-    .createHash("md5")
-    .update(String(value || ""), "utf8")
-    .digest("hex")
-    .toUpperCase();
-
 const ensureTrailingSlashRemoved = (url) =>
   String(url || "").replace(/\/+$/, "");
 
@@ -111,7 +104,7 @@ const getCheckValue = ({
 }) => {
   const hashedToken = toSha512Upper(merchantToken);
   const raw = `${merchantKey}|${invoiceId}|${amount}|${currencyCode}|${hashedToken}`;
-  return toMd5Upper(raw);
+  return toSha512Upper(raw);
 };
 
 router.post("/initiate", async (req, res) => {
