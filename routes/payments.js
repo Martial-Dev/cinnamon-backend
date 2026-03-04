@@ -21,6 +21,16 @@ const toMd5Upper = (value) =>
 const ensureTrailingSlashRemoved = (url) =>
   String(url || "").replace(/\/+$/, "");
 
+const isPlaceholderValue = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized.includes("your_") ||
+    normalized.includes("placeholder") ||
+    normalized.includes("change_me")
+  );
+};
+
 const parseBoolean = (value, fallbackValue = false) => {
   if (typeof value === "boolean") {
     return value;
@@ -67,6 +77,15 @@ const getPayableConfig = (testModeInput) => {
       valid: false,
       error:
         "Missing Payable configuration. Set PAYABLE_* merchant keys/tokens and PAYABLE_TEST_API_BASE or PAYABLE_LIVE_API_BASE (or PAYABLE_API_BASE fallback).",
+    };
+  }
+
+  if (isPlaceholderValue(merchantKey) || isPlaceholderValue(merchantToken)) {
+    return {
+      valid: false,
+      error: testMode
+        ? "Payable TEST credentials are placeholders. Set PAYABLE_MERCHANT_KEY_TEST and PAYABLE_MERCHANT_TOKEN_TEST."
+        : "Payable LIVE credentials are placeholders. Set PAYABLE_MERCHANT_KEY_LIVE and PAYABLE_MERCHANT_TOKEN_LIVE.",
     };
   }
 
