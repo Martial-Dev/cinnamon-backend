@@ -36,7 +36,7 @@ exports.loginUser = async (req, res) => {
       lastName: user.lastName || "",
       userName: user.userName,
     });
-    console.log(res);
+    console.log("Login success for user:", username);
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
