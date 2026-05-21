@@ -210,7 +210,7 @@ router.post("/sdk-config", async (req, res) => {
         currencyCode: finalCurrencyCode,
       }),
       invoiceId,
-      orderDescription,
+      orderDescription: safeOrderDescription,
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       paymentType: String(paymentType || 1),

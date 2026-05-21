@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
@@ -66,12 +67,81 @@ router.get("/", checkAuth, async (req, res) => {
 // Delete cart item
 router.delete("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await Cart.findByIdAndDelete(id);
-    if (!result) {
-      return res.status(404).json({ message: "Item not found" });
+    const userId = req.userData?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
     }
-    res.status(200).json({ message: "Item deleted from cart" });
+
+    const { id } = req.params;
+    const result = await Cart.findOneAndUpdate(
+      { userId },
+      {
+        $pull: {
+          items: {
+            $or: [{ _id: id }, { productId: id }],
+          },
+        },
+      },
+      { new: true },
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    const itemStillExists = result.items.some(
+      (item) => item._id.toString() === id || item.productId.toString() === id,
+    );
+    if (itemStillExists) {
+      return res.status(404).json({ message: "Item not found in cart" });
+    }
+
+    res.status(200).json({ message: "Item deleted from cart", cart: result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete multiple cart items
+router.patch("/remove-items", async (req, res) => {
+  try {
+    const userId = req.userData?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "No item ids provided" });
+    }
+
+    const normalizedIds = ids
+      .map((id) => String(id).trim())
+      .filter((id) => id.length > 0);
+
+    const objectIds = normalizedIds
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      .map((id) => mongoose.Types.ObjectId(id));
+
+    const matchIds = Array.from(new Set([...normalizedIds, ...objectIds]));
+
+    const result = await Cart.findOneAndUpdate(
+      { userId },
+      {
+        $pull: {
+          items: {
+            $or: [{ _id: { $in: matchIds } }, { productId: { $in: matchIds } }],
+          },
+        },
+      },
+      { new: true },
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    res.status(200).json({ message: "Items deleted from cart", cart: result });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
