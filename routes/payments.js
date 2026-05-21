@@ -200,7 +200,11 @@ router.post("/sdk-config", async (req, res) => {
       custom1: custom1 || undefined,
       custom2: custom2 || undefined,
       invoiceId,
-      orderDescription,
+      orderDescription: orderDescription
+        .trim()
+        .replace(/[–—]/g, '-')  // Replace em-dash and en-dash with hyphen
+        .replace(/[^\w\s\-.,&]/g, '')  // Remove other special characters
+        .substring(0, 100),  // Limit to 100 chars
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       paymentType: String(paymentType || 1),
