@@ -212,15 +212,11 @@ router.post("/sdk-config", async (req, res) => {
       custom1: custom1 || undefined,
       custom2: custom2 || undefined,
       invoiceId,
-<<<<<<< HEAD
-      orderDescription: safeOrderDescription,
-=======
       orderDescription: orderDescription
         .trim()
         .replace(/[–—]/g, '-')  // Replace em-dash and en-dash with hyphen
         .replace(/[^\w\s\-.,&]/g, '')  // Remove other special characters
         .substring(0, 100),  // Limit to 100 chars
->>>>>>> 87a49de (Sanitize orderDescription to fix Payable SDK validation error)
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       paymentType: String(paymentType || 1),
