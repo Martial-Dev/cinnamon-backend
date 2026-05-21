@@ -103,7 +103,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // Delete multiple cart items
-router.post("/remove-items", async (req, res) => {
+router.patch("/remove-items", async (req, res) => {
   try {
     const userId = req.userData?.userId;
     if (!userId) {
