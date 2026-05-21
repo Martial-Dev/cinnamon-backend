@@ -14,6 +14,16 @@ const toSha512Upper = (value) =>
 const ensureTrailingSlashRemoved = (url) =>
   String(url || "").replace(/\/+$/, "");
 
+const sanitizeText = (value) =>
+  String(value || "")
+    .replace(/[\x00-\x1F\x7F]+/g, " ")
+    .replace(/[\u2028\u2029]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const sanitizeOrderDescription = (value) =>
+  sanitizeText(value).substring(0, 100);
+
 const isPlaceholderValue = (value) => {
   const normalized = String(value || "")
     .trim()
@@ -151,10 +161,12 @@ router.post("/sdk-config", async (req, res) => {
       custom2,
     } = req.body || {};
 
+    const safeOrderDescription = sanitizeOrderDescription(orderDescription);
+
     if (
       !invoiceId ||
       !amount ||
-      !orderDescription ||
+      !safeOrderDescription ||
       !customerFirstName ||
       !customerLastName ||
       !customerEmail ||
@@ -198,11 +210,7 @@ router.post("/sdk-config", async (req, res) => {
         currencyCode: finalCurrencyCode,
       }),
       invoiceId,
-      orderDescription: orderDescription
-        .trim()
-        .replace(/[–—]/g, "-") // Replace em-dash and en-dash with hyphen
-        .replace(/[^\w\s\-.,&]/g, "") // Remove other special characters
-        .substring(0, 100), // Limit to 100 chars
+      orderDescription,
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       paymentType: String(paymentType || 1),
@@ -303,10 +311,12 @@ router.post("/initiate", async (req, res) => {
       custom2,
     } = req.body || {};
 
+    const safeOrderDescription = sanitizeOrderDescription(orderDescription);
+
     if (
       !invoiceId ||
       !amount ||
-      !orderDescription ||
+      !safeOrderDescription ||
       !customerFirstName ||
       !customerLastName ||
       !customerEmail ||
@@ -355,11 +365,7 @@ router.post("/initiate", async (req, res) => {
       returnUrl: returnUrl || process.env.PAYMENT_RETURN_URL || "",
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
-      orderDescription: orderDescription
-        .trim()
-        .replace(/[–—]/g, "-")
-        .replace(/[^\w\s\-.,&]/g, "")
-        .substring(0, 100),
+      orderDescription,
       customerFirstName,
       customerLastName,
       customerEmail,
