@@ -12,8 +12,13 @@ router.post("/", checkAuth, async (req, res) => {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    const { _id, quantity = 1 } = req.body;
-    const product = await Product.findById(_id);
+    const { _id, productId, quantity = 1 } = req.body;
+    const idToFind = _id || productId;
+    if (!idToFind) {
+      return res.status(400).json({ error: "Product id is required" });
+    }
+
+    const product = await Product.findById(idToFind);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
@@ -28,10 +33,13 @@ router.post("/", checkAuth, async (req, res) => {
       productName: product.productName,
       price: product.price,
       quantity,
-      productImage: product.productImage
+      productImage: product.productImage,
     });
 
-    cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
+    cart.totalPrice = cart.items.reduce(
+      (sum, item) => sum + item.price * (item.quantity || 1),
+      0,
+    );
 
     await cart.save();
     res.status(200).json({ message: "Item added to cart", cart });
