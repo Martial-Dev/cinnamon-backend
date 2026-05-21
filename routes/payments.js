@@ -14,6 +14,16 @@ const toSha512Upper = (value) =>
 const ensureTrailingSlashRemoved = (url) =>
   String(url || "").replace(/\/+$/, "");
 
+const sanitizeText = (value) =>
+  String(value || "")
+    .replace(/[\x00-\x1F\x7F]+/g, " ")
+    .replace(/[\u2028\u2029]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const sanitizeOrderDescription = (value) =>
+  sanitizeText(value).substring(0, 100);
+
 const isPlaceholderValue = (value) => {
   const normalized = String(value || "")
     .trim()
@@ -151,10 +161,12 @@ router.post("/sdk-config", async (req, res) => {
       custom2,
     } = req.body || {};
 
+    const safeOrderDescription = sanitizeOrderDescription(orderDescription);
+
     if (
       !invoiceId ||
       !amount ||
-      !orderDescription ||
+      !safeOrderDescription ||
       !customerFirstName ||
       !customerLastName ||
       !customerEmail ||
@@ -200,7 +212,7 @@ router.post("/sdk-config", async (req, res) => {
       custom1: custom1 || undefined,
       custom2: custom2 || undefined,
       invoiceId,
-      orderDescription,
+      orderDescription: safeOrderDescription,
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       paymentType: String(paymentType || 1),
@@ -278,10 +290,12 @@ router.post("/initiate", async (req, res) => {
       shippingAddressStateProvince,
     } = req.body || {};
 
+    const safeOrderDescription = sanitizeOrderDescription(orderDescription);
+
     if (
       !invoiceId ||
       !amount ||
-      !orderDescription ||
+      !safeOrderDescription ||
       !customerFirstName ||
       !customerLastName ||
       !customerEmail ||
@@ -331,7 +345,7 @@ router.post("/initiate", async (req, res) => {
       returnUrl: returnUrl || process.env.PAYMENT_RETURN_URL || "",
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
-      orderDescription,
+      orderDescription: safeOrderDescription,
       customerFirstName,
       customerLastName,
       customerEmail,
