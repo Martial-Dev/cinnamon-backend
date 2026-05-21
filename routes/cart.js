@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
@@ -114,17 +115,22 @@ router.post("/remove-items", async (req, res) => {
       return res.status(400).json({ message: "No item ids provided" });
     }
 
-    const normalizedIds = ids.map((id) => String(id));
+    const normalizedIds = ids
+      .map((id) => String(id).trim())
+      .filter((id) => id.length > 0);
+
+    const objectIds = normalizedIds
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      .map((id) => mongoose.Types.ObjectId(id));
+
+    const matchIds = Array.from(new Set([...normalizedIds, ...objectIds]));
 
     const result = await Cart.findOneAndUpdate(
       { userId },
       {
         $pull: {
           items: {
-            $or: [
-              { _id: { $in: normalizedIds } },
-              { productId: { $in: normalizedIds } },
-            ],
+            $or: [{ _id: { $in: matchIds } }, { productId: { $in: matchIds } }],
           },
         },
       },
