@@ -185,10 +185,10 @@ router.post("/sdk-config", async (req, res) => {
       ? returnUrl
       : process.env.PAYMENT_RETURN_URL || "";
 
+    // Build payment object with only defined values per SDK spec
     const payment = {
       notifyUrl: safeNotifyUrl,
       returnUrl: safeReturnUrl,
-      logoUrl: logoUrl || undefined,
       merchantKey: config.merchantKey,
       checkValue: getCheckValue({
         merchantKey: config.merchantKey,
@@ -197,14 +197,12 @@ router.post("/sdk-config", async (req, res) => {
         amount: finalAmount,
         currencyCode: finalCurrencyCode,
       }),
-      custom1: custom1 || undefined,
-      custom2: custom2 || undefined,
       invoiceId,
       orderDescription: orderDescription
         .trim()
-        .replace(/[–—]/g, '-')  // Replace em-dash and en-dash with hyphen
-        .replace(/[^\w\s\-.,&]/g, '')  // Remove other special characters
-        .substring(0, 100),  // Limit to 100 chars
+        .replace(/[–—]/g, "-") // Replace em-dash and en-dash with hyphen
+        .replace(/[^\w\s\-.,&]/g, "") // Remove other special characters
+        .substring(0, 100), // Limit to 100 chars
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
       paymentType: String(paymentType || 1),
@@ -215,18 +213,33 @@ router.post("/sdk-config", async (req, res) => {
       billingAddressStreet,
       billingAddressCity,
       billingAddressCountry,
-      billingAddressPostcodeZip: billingAddressPostcodeZip || undefined,
-      billingAddressStateProvince: billingAddressStateProvince || undefined,
-      shippingContactFirstName: shippingContactFirstName || undefined,
-      shippingContactLastName: shippingContactLastName || undefined,
-      shippingContactEmail: shippingContactEmail || undefined,
-      shippingContactMobilePhone: shippingContactMobilePhone || undefined,
-      shippingAddressStreet: shippingAddressStreet || undefined,
-      shippingAddressCity: shippingAddressCity || undefined,
-      shippingAddressCountry: shippingAddressCountry || undefined,
-      shippingAddressPostcodeZip: shippingAddressPostcodeZip || undefined,
-      shippingAddressStateProvince: shippingAddressStateProvince || undefined,
     };
+
+    // Add optional fields only if provided
+    if (logoUrl) payment.logoUrl = logoUrl;
+    if (custom1) payment.custom1 = custom1;
+    if (custom2) payment.custom2 = custom2;
+    if (billingAddressPostcodeZip)
+      payment.billingAddressPostcodeZip = billingAddressPostcodeZip;
+    if (billingAddressStateProvince)
+      payment.billingAddressStateProvince = billingAddressStateProvince;
+    if (shippingContactFirstName)
+      payment.shippingContactFirstName = shippingContactFirstName;
+    if (shippingContactLastName)
+      payment.shippingContactLastName = shippingContactLastName;
+    if (shippingContactEmail)
+      payment.shippingContactEmail = shippingContactEmail;
+    if (shippingContactMobilePhone)
+      payment.shippingContactMobilePhone = shippingContactMobilePhone;
+    if (shippingAddressStreet)
+      payment.shippingAddressStreet = shippingAddressStreet;
+    if (shippingAddressCity) payment.shippingAddressCity = shippingAddressCity;
+    if (shippingAddressCountry)
+      payment.shippingAddressCountry = shippingAddressCountry;
+    if (shippingAddressPostcodeZip)
+      payment.shippingAddressPostcodeZip = shippingAddressPostcodeZip;
+    if (shippingAddressStateProvince)
+      payment.shippingAddressStateProvince = shippingAddressStateProvince;
 
     return res.status(200).json({
       sdkUrl: getSdkScriptUrl(config.testMode),
@@ -265,21 +278,29 @@ router.post("/initiate", async (req, res) => {
       customerLastName,
       customerEmail,
       customerMobilePhone,
+      customerPhone,
       paymentType,
       billingAddressStreet,
+      billingAddressStreet2,
       billingAddressCity,
       billingAddressCountry,
       billingAddressPostcodeZip,
       billingAddressStateProvince,
+      billingCompanyName,
       shippingContactFirstName,
       shippingContactLastName,
       shippingContactEmail,
       shippingContactMobilePhone,
+      shippingContactPhone,
       shippingAddressStreet,
+      shippingAddressStreet2,
       shippingAddressCity,
       shippingAddressCountry,
       shippingAddressPostcodeZip,
       shippingAddressStateProvince,
+      shippingCompanyName,
+      custom1,
+      custom2,
     } = req.body || {};
 
     if (
@@ -330,12 +351,15 @@ router.post("/initiate", async (req, res) => {
         process.env.PAYABLE_INTEGRATION_VERSION ||
         "1.0.1",
       refererUrl: refererUrl || process.env.CLIENT_URL || "",
-      logoUrl: logoUrl || undefined,
       webhookUrl: webhookUrl || process.env.PAYMENT_WEBHOOK_URL || "",
       returnUrl: returnUrl || process.env.PAYMENT_RETURN_URL || "",
       amount: finalAmount,
       currencyCode: finalCurrencyCode,
-      orderDescription,
+      orderDescription: orderDescription
+        .trim()
+        .replace(/[–—]/g, "-")
+        .replace(/[^\w\s\-.,&]/g, "")
+        .substring(0, 100),
       customerFirstName,
       customerLastName,
       customerEmail,
@@ -353,16 +377,40 @@ router.post("/initiate", async (req, res) => {
       billingAddressCountry,
       billingAddressPostcodeZip,
       billingAddressStateProvince: billingAddressStateProvince || undefined,
-      shippingContactFirstName: shippingContactFirstName || undefined,
-      shippingContactLastName: shippingContactLastName || undefined,
-      shippingContactEmail: shippingContactEmail || undefined,
-      shippingContactMobilePhone: shippingContactMobilePhone || undefined,
-      shippingAddressStreet: shippingAddressStreet || undefined,
-      shippingAddressCity: shippingAddressCity || undefined,
-      shippingAddressCountry: shippingAddressCountry || undefined,
-      shippingAddressPostcodeZip: shippingAddressPostcodeZip || undefined,
-      shippingAddressStateProvince: shippingAddressStateProvince || undefined,
     };
+
+    // Add optional fields only if provided per SDK spec
+    if (logoUrl) requestBody.logoUrl = logoUrl;
+    if (custom1) requestBody.custom1 = custom1;
+    if (custom2) requestBody.custom2 = custom2;
+    if (customerPhone) requestBody.customerPhone = customerPhone;
+    if (billingAddressStreet2)
+      requestBody.billingAddressStreet2 = billingAddressStreet2;
+    if (billingCompanyName) requestBody.billingCompanyName = billingCompanyName;
+    if (shippingContactFirstName)
+      requestBody.shippingContactFirstName = shippingContactFirstName;
+    if (shippingContactLastName)
+      requestBody.shippingContactLastName = shippingContactLastName;
+    if (shippingContactEmail)
+      requestBody.shippingContactEmail = shippingContactEmail;
+    if (shippingContactMobilePhone)
+      requestBody.shippingContactMobilePhone = shippingContactMobilePhone;
+    if (shippingContactPhone)
+      requestBody.shippingContactPhone = shippingContactPhone;
+    if (shippingCompanyName)
+      requestBody.shippingCompanyName = shippingCompanyName;
+    if (shippingAddressStreet)
+      requestBody.shippingAddressStreet = shippingAddressStreet;
+    if (shippingAddressStreet2)
+      requestBody.shippingAddressStreet2 = shippingAddressStreet2;
+    if (shippingAddressCity)
+      requestBody.shippingAddressCity = shippingAddressCity;
+    if (shippingAddressCountry)
+      requestBody.shippingAddressCountry = shippingAddressCountry;
+    if (shippingAddressPostcodeZip)
+      requestBody.shippingAddressPostcodeZip = shippingAddressPostcodeZip;
+    if (shippingAddressStateProvince)
+      requestBody.shippingAddressStateProvince = shippingAddressStateProvince;
 
     // hard safety: strip forbidden field even if added elsewhere
     delete requestBody.merchantToken;
@@ -431,6 +479,82 @@ router.get("/status", async (req, res) => {
       error: {
         "err-message": "Failed to check payment status",
       },
+    });
+  }
+});
+
+// Webhook endpoint to receive payment notifications from Payable
+router.post("/webhook", async (req, res) => {
+  try {
+    const {
+      merchantKey,
+      payableOrderId,
+      payableTransactionId,
+      payableAmount,
+      payableCurrency,
+      invoiceNo,
+      statusCode,
+      statusMessage,
+      checkValue,
+    } = req.body || {};
+
+    // Validate required fields in notification
+    if (!merchantKey || !payableOrderId || !statusCode || !checkValue) {
+      return res.status(400).json({
+        status: 400,
+        error: "Missing required fields in payment notification",
+      });
+    }
+
+    // Get config for verification
+    const config = getPayableConfig();
+    if (!config.valid) {
+      return res.status(500).json({
+        status: 500,
+        error: "Server configuration error",
+      });
+    }
+
+    // Verify merchantKey matches
+    if (merchantKey !== config.merchantKey) {
+      return res.status(403).json({
+        status: 403,
+        error: "Invalid merchant key",
+      });
+    }
+
+    // Verify checkValue per SDK spec:
+    // UPPERCASE(SHA512[<merchantKey>|<payableOrderId>|<payableTransactionId>|<payableAmount>|<payableCurrency>|<invoiceId>|<statusCode>|UPPERCASE(SHA512[<MerchantToken>])])
+    const expectedCheckValue = toSha512Upper(
+      `${merchantKey}|${payableOrderId}|${payableTransactionId}|${payableAmount}|${payableCurrency}|${invoiceNo}|${statusCode}|${toSha512Upper(config.merchantToken)}`,
+    );
+
+    if (checkValue !== expectedCheckValue) {
+      return res.status(403).json({
+        status: 403,
+        error:
+          "Invalid checkValue - notification signature verification failed",
+      });
+    }
+
+    // Log successful notification
+    console.log(
+      `[Payable Webhook] Invoice: ${invoiceNo}, Status: ${statusCode} (${statusMessage}), Amount: ${payableAmount} ${payableCurrency}`,
+    );
+
+    // TODO: Update your database here with payment status
+    // Examples:
+    // - if (statusCode === 1) update invoice as PAID
+    // - if (statusCode === 2) update invoice as FAILED
+    // - if (statusCode === 7) update invoice as REFUNDED
+
+    // Send success response to Payable per SDK spec
+    return res.status(200).json({ Status: 200 });
+  } catch (error) {
+    console.error("Error processing payment webhook:", error);
+    return res.status(500).json({
+      status: 500,
+      error: "Failed to process payment notification",
     });
   }
 });
