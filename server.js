@@ -1,5 +1,4 @@
 var express = require("express");
-var mongoose = require("mongoose");
 var bodyParser = require("body-parser");
 var cors = require("cors");
 var app = express();
@@ -11,12 +10,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors({ origin: "*" }));
 
-console.log("MONGODB_URI:", process.env.MONGODB_URI);
-// Database connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB connected successfully"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+// Import and initialize database connection
+const connectDB = require("./config/db");
+connectDB();
 
 // Import route modules
 const userRoutes = require("./routes/users.js");
@@ -32,6 +28,7 @@ const reviewRoutes = require("./routes/review.js");
 const contactRoutes = require("./routes/contact.js");
 const recipeRoutes = require("./routes/recipe.js");
 const recruitmentRoutes = require("./routes/recruitment.js");
+const supplierRoutes = require("./routes/supplier.js");
 
 const checkAuth = require("./middleware/check-auth.js");
 
@@ -50,6 +47,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/recruitment", recruitmentRoutes);
 app.use("/api/recipes", recipeRoutes);
+app.use("/api/suppliers", supplierRoutes);
 
 // Start server
 const PORT = process.env.PORT || 8080;

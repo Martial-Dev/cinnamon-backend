@@ -4,17 +4,19 @@ const Invoice = require("../models/Invoice");
 
 // Create a new invoice
 router.post("/", async (req, res) => {
-  const { orderId, date, dueDate, total, paymentStatus } = req.body;
-
   try {
-    const newInvoice = new Invoice({
-      orderId,
-      date,
-      dueDate,
-      total,
-      paymentStatus,
-    });
+    const payload = req.body || {};
+    // If total not provided, compute from items
+    if (!payload.total && Array.isArray(payload.items)) {
+      payload.total = payload.items.reduce(
+        (acc, it) =>
+          acc +
+          (Number(it.lineTotal || (it.price || 0) * (it.quantity || 0)) || 0),
+        0,
+      );
+    }
 
+    const newInvoice = new Invoice(payload);
     const savedInvoice = await newInvoice.save();
     res.status(201).json(savedInvoice);
   } catch (error) {
@@ -48,7 +50,11 @@ router.get("/:id", async (req, res) => {
 // Update an invoice by ID
 router.put("/:id", async (req, res) => {
   try {
-    const updatedInvoice = await Invoice.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedInvoice = await Invoice.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true },
+    );
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
