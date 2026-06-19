@@ -1,6 +1,6 @@
 const Application = require("../models/Application");
 const transporter = require("../utils/mailer");
-const uploadImageToFirebase = require("../utils/firebase");
+const uploadImageToFirebase = require("../utils/firebase").default;
 
 /**
  * Submit a new recruitment application
@@ -137,7 +137,9 @@ exports.submitApplication = async (req, res) => {
                 ? `
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd; background: #f5f5f5;"><strong>Intro Video:</strong></td>
-              <td style="padding: 8px; border: 1px solid #ddd;"><a href="${videoUrl}" style="color: #8B4513;">Watch Video (${videoType || 'link'})</a></td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><a href="${videoUrl}" style="color: #8B4513;">Watch Video (${
+                    videoType || "link"
+                  })</a></td>
             </tr>
             `
                 : ""
@@ -300,7 +302,9 @@ exports.updateApplicationStatus = async (req, res) => {
 
     // Log the action
     console.log(
-      `[${new Date().toISOString()}] Application status updated - ID: ${req.params.id}, Status: ${status}, Admin: ${req.userData?.userId || "unknown"}`,
+      `[${new Date().toISOString()}] Application status updated - ID: ${
+        req.params.id
+      }, Status: ${status}, Admin: ${req.userData?.userId || "unknown"}`,
     );
 
     // Send status update email to applicant
@@ -370,7 +374,11 @@ exports.deleteApplication = async (req, res) => {
 
     // Log the deletion
     console.log(
-      `[${new Date().toISOString()}] Application deleted - ID: ${req.params.id}, Email: ${application.email}, Admin: ${req.userData?.userId || "unknown"}`,
+      `[${new Date().toISOString()}] Application deleted - ID: ${
+        req.params.id
+      }, Email: ${application.email}, Admin: ${
+        req.userData?.userId || "unknown"
+      }`,
     );
 
     res.status(200).json({

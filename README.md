@@ -1,81 +1,57 @@
-# Project Title: Backend for E-commerce Application using MongoDB
+# Sample Hardhat 3 Project (`mocha` and `ethers`)
 
-## Description
-This project is a backend application for an e-commerce platform built using Node.js and Express. It utilizes MongoDB as the database to store and manage data related to users, products, carts, invoices, and reviews.
+This project showcases a Hardhat 3 project using `mocha` for tests and the `ethers` library for Ethereum interactions.
 
-## Features
-- User authentication and management
-- Product management (CRUD operations)
-- Cart management (add, retrieve, delete items)
-- Invoice management (create, retrieve, update invoices)
-- Image upload and retrieval
-- Middleware for authentication checks
+To learn more about Hardhat 3, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3](https://hardhat.org/hardhat3-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
 
-## Technologies Used
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose (for MongoDB object modeling)
-- Multer (for handling file uploads)
-- dotenv (for environment variable management)
+## Project Overview
 
-## Installation
-1. Clone the repository:
-   ```
-   git clone <repository-url>
-   ```
-2. Navigate to the project directory:
-   ```
-   cd backend-mongodb
-   ```
-3. Install the dependencies:
-   ```
-   npm install
-   ```
-4. Create a `.env` file in the root directory and add your MongoDB connection string:
-   ```
-   MONGODB_URI=mongodb+srv://canelaceylonbycinnamoninc:LHAW0YHWTOzpKtRS@canleaceylon.czljmki.mongodb.net/
-   ```
+This example project includes:
+
+- A simple Hardhat configuration file.
+- Foundry-compatible Solidity unit tests.
+- TypeScript integration tests using `mocha` and ethers.js
+- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
 
 ## Usage
-1. Start the server:
-   ```
-   npm start
-   ```
-2. The server will run on `http://localhost:8080`.
 
-## API Endpoints
-- **Users**
-  - `POST /api/users` - Create a new user
-  - `GET /api/users/:id` - Retrieve user information
-  - `PUT /api/users/:id` - Update user details
+### Running Tests
 
-- **Products**
-  - `POST /api/products` - Create a new product
-  - `GET /api/products` - Retrieve all products
-  - `GET /api/products/:id` - Retrieve a specific product
-  - `PUT /api/products/:id` - Update a product
-  - `DELETE /api/products/:id` - Delete a product
+To run all the tests in the project, execute the following command:
 
-- **Cart**
-  - `POST /api/cart` - Add item to cart
-  - `GET /api/cart` - Retrieve cart items
-  - `DELETE /api/cart/:id` - Remove item from cart
+```shell
+npx hardhat test
+```
 
-- **Invoices**
-  - `POST /api/invoice` - Create a new invoice
-  - `GET /api/invoice/:id` - Retrieve an invoice
-  - `PUT /api/invoice/:id` - Update an invoice
+You can also selectively run the Solidity or `mocha` tests:
 
-- **Images**
-  - `POST /uploads` - Upload an image
-  - `GET /uploads/:filename` - Retrieve an image
+```shell
+npx hardhat test solidity
+npx hardhat test mocha
+```
 
-- **Login**
-  - `POST /api/login` - Authenticate user and generate token
+### Make a deployment to Sepolia
 
-## Contributing
-Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
 
-## License
-This project is licensed under the MIT License.
+To run the deployment to a local chain:
+
+```shell
+npx hardhat ignition deploy ignition/modules/Counter.ts
+```
+
+To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+
+You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+
+To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+
+```shell
+npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+```
+
+After setting the variable, you can run the deployment with the Sepolia network:
+
+```shell
+npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+```

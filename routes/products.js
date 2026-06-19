@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/Multer");
 const Product = require("../models/Product");
-const uploadImageToFirebase = require("../utils/firebase");
+const uploadImageToFirebase = require("../utils/firebase").default;
 const checkAuth = require("../middleware/check-auth");
 
 // Create a new product
@@ -13,7 +13,7 @@ router.post("/", checkAuth, upload.single("image"), async (req, res) => {
       productImage = await uploadImageToFirebase(
         req.file.buffer,
         req.file.originalname,
-        "products"
+        "products",
       );
     }
     const {
@@ -33,7 +33,7 @@ router.post("/", checkAuth, upload.single("image"), async (req, res) => {
       quantity,
       price,
       availability,
-      type: type || 'standard',
+      type: type || "standard",
       discount: discount || 0,
     });
 
@@ -75,7 +75,7 @@ router.put("/:id", checkAuth, upload.single("image"), async (req, res) => {
       updateData.productImage = await uploadImageToFirebase(
         req.file.buffer,
         req.file.originalname,
-        "products"
+        "products",
       );
     }
     const product = await Product.findByIdAndUpdate(req.params.id, updateData, {

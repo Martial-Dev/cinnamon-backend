@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Invoice = require("../models/Invoice");
+const Order = require("../models/Oder");
 
 // Create a new invoice
 router.post("/", async (req, res) => {
@@ -29,6 +30,87 @@ router.get("/", async (req, res) => {
   try {
     const invoices = await Invoice.find();
     res.status(200).json(invoices);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Preview invoice generated from an order (no DB write)
+router.get("/preview-from-order/:orderId", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId).lean();
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const items = (order.items || []).map((it, idx) => {
+      const lineTotal =
+        it.lineTotal != null
+          ? Number(it.lineTotal)
+          : Number(it.price || 0) * Number(it.quantity || 0);
+      return {
+        productId: it.product,
+        productName: it.productName || "",
+        quantity: it.quantity || 0,
+        price: it.price || 0,
+        lineNumber: idx + 1,
+        lineTotal,
+      };
+    });
+
+    const total = items.reduce((s, i) => s + (Number(i.lineTotal) || 0), 0);
+
+    const preview = {
+      orderId: order._id,
+      items,
+      total,
+      type: req.query.type || "PROFORMA",
+      currency: order.currency || "USD",
+      seller: req.body?.seller || {},
+      buyer: req.body?.buyer || {},
+    };
+
+    res.json(preview);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create and save invoice from an order
+router.post("/from-order/:orderId", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId).lean();
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const items = (order.items || []).map((it, idx) => {
+      const lineTotal =
+        it.lineTotal != null
+          ? Number(it.lineTotal)
+          : Number(it.price || 0) * Number(it.quantity || 0);
+      return {
+        productId: it.product,
+        productName: it.productName || "",
+        quantity: it.quantity || 0,
+        price: it.price || 0,
+        lineNumber: idx + 1,
+        lineTotal,
+      };
+    });
+
+    const total = items.reduce((s, i) => s + (Number(i.lineTotal) || 0), 0);
+
+    const invoicePayload = {
+      orderId: order._id,
+      items,
+      total,
+      type: req.body.type || "PROFORMA",
+      currency: req.body.currency || order.currency || "USD",
+      seller: req.body.seller || {},
+      buyer: req.body.buyer || {},
+      createdBy: req.body.createdBy || "system",
+    };
+
+    const newInvoice = new Invoice(invoicePayload);
+    const savedInvoice = await newInvoice.save();
+    res.status(201).json(savedInvoice);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

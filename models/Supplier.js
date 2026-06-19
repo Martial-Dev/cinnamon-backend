@@ -1,54 +1,7 @@
 const mongoose = require("mongoose");
-
-const supplierProductSchema = new mongoose.Schema(
-  {
-    productName: { type: String, required: true },
-    productDescription: { type: String },
-    hsCode: { type: String }, // For customs
-    quantity: { type: Number, required: true },
-    quantityUnit: { type: String, default: "kg" },
-    price: { type: Number, required: true },
-    currency: { type: String, default: "USD" },
-    grade: { type: String }, // e.g., A, B, C for cinnamon
-    minimumOrder: { type: Number },
-    availability: {
-      type: String,
-      enum: ["in_stock", "made_to_order", "seasonal"],
-      default: "in_stock",
-    },
-    leadTime: { type: Number }, // in days
-    certifications: [{ type: String }], // e.g., ['Organic', 'Fair Trade']
-  },
-  { _id: false },
-);
-
-const blockchainRefSchema = new mongoose.Schema(
-  {
-    txId: String,
-    network: String, // e.g., 'ethereum', 'polygon'
-    contractAddress: String,
-    hash: String, // SHA256 hash of supplier data
-    explorerUrl: String,
-    recordedAt: { type: Date, default: Date.now },
-  },
-  { _id: false },
-);
-
-const verificationSchema = new mongoose.Schema(
-  {
-    status: {
-      type: String,
-      enum: ["PENDING", "VERIFIED", "REJECTED", "SUSPENDED"],
-      default: "PENDING",
-    },
-    verifiedBy: String, // User ID of verifier
-    verificationDate: Date,
-    verificationNotes: String,
-    documentsRequired: [String], // e.g., ['business_license', 'tax_certificate', 'product_samples']
-    documentsProvided: [String],
-  },
-  { _id: false },
-);
+const supplierProductSchema = require("./supplierProductSchema");
+const blockchainRefSchema = require("./blockchainRefSchema");
+const verificationSchema = require("./verificationSchema");
 
 const supplierSchema = new mongoose.Schema(
   {
@@ -117,7 +70,6 @@ const supplierSchema = new mongoose.Schema(
 );
 
 // Index for fast lookup
-supplierSchema.index({ supplierName: 1 });
 supplierSchema.index({ email: 1 });
 supplierSchema.index({ country: 1 });
 supplierSchema.index({ "blockchainRef.hash": 1 });

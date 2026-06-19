@@ -56,8 +56,4 @@ const orderSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
-// Indexes helpful for webhook lookups
-orderSchema.index({ payableTransactionId: 1 });
-orderSchema.index({ invoiceId: 1 });
-
 module.exports = mongoose.model("Order", orderSchema);

@@ -2,8 +2,7 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var cors = require("cors");
 var app = express();
-var dotenv = require("dotenv");
-
+const dotenv = require('dotenv'); // Add this at line 1
 dotenv.config();
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -29,6 +28,9 @@ const contactRoutes = require("./routes/contact.js");
 const recipeRoutes = require("./routes/recipe.js");
 const recruitmentRoutes = require("./routes/recruitment.js");
 const supplierRoutes = require("./routes/supplier.js");
+const poRoutes = require("./routes/purchase-order.js");
+const paymentNewRoutes = require("./routes/payment.js");
+const hashRoutes = require("./routes/hash.js");
 
 const checkAuth = require("./middleware/check-auth.js");
 
@@ -48,6 +50,11 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/recruitment", recruitmentRoutes);
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/suppliers", supplierRoutes);
+
+// New endpoints for purchase orders, payments (PO-related), and hashing/proofs
+app.use("/api/purchase-order", poRoutes);
+app.use("/api/payment", paymentNewRoutes);
+app.use("/api/hash", hashRoutes);
 
 // Start server
 const PORT = process.env.PORT || 8080;

@@ -4,7 +4,7 @@ const Order = require("../models/Oder");
 const Product = require("../models/Product");
 const checkAuth = require("../middleware/check-auth");
 const User = require("../models/User");
-const uploadImageToFirebase = require("../utils/firebase");
+const uploadImageToFirebase = require("../utils/firebase").default;
 const upload = require("../middleware/Multer");
 const Cart = require("../models/Cart");
 const transporter = require("../utils/mailer");
@@ -127,10 +127,18 @@ router.post(
           .map(
             (item) => `
             <tr>
-              <td style="padding: 8px; border: 1px solid #ddd;">${item.productName || "Product"}</td>
-              <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-              <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${item.price.toFixed(2)}</td>
-              <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${(item.price * item.quantity).toFixed(2)}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${
+                item.productName || "Product"
+              }</td>
+              <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${
+                item.quantity
+              }</td>
+              <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${item.price.toFixed(
+                2,
+              )}</td>
+              <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${(
+                item.price * item.quantity
+              ).toFixed(2)}</td>
             </tr>
           `,
           )
@@ -147,17 +155,27 @@ router.post(
               <div style="background: #f9f9f9; padding: 15px; margin: 20px 0; border-radius: 5px;">
                 <h3 style="color: #8B4513; margin-top: 0;">Order Details</h3>
                 <p><strong>Order ID:</strong> ${savedOrder._id}</p>
-                <p><strong>Customer:</strong> ${user.firstName} ${user.lastName}</p>
+                <p><strong>Customer:</strong> ${user.firstName} ${
+            user.lastName
+          }</p>
                 <p><strong>Email:</strong> ${user.email}</p>
                 <p><strong>Phone:</strong> ${user.contactNo || "N/A"}</p>
-                <p><strong>Payment Method:</strong> ${paymentMethod.replace("_", " ").toUpperCase()}</p>
-                <p><strong>Payment Status:</strong> <span style="color: ${orderData.paymentStatus === "Paid" ? "#28a745" : "#ffc107"}; font-weight: bold;">${orderData.paymentStatus}</span></p>
-                <p><strong>Order Date:</strong> ${new Date(savedOrder.createdAt).toLocaleString()}</p>
+                <p><strong>Payment Method:</strong> ${paymentMethod
+                  .replace("_", " ")
+                  .toUpperCase()}</p>
+                <p><strong>Payment Status:</strong> <span style="color: ${
+                  orderData.paymentStatus === "Paid" ? "#28a745" : "#ffc107"
+                }; font-weight: bold;">${orderData.paymentStatus}</span></p>
+                <p><strong>Order Date:</strong> ${new Date(
+                  savedOrder.createdAt,
+                ).toLocaleString()}</p>
               </div>
 
               <div style="margin: 20px 0;">
                 <h3 style="color: #8B4513;">Shipping Address</h3>
-                <p style="padding: 10px; background: #f9f9f9; border-left: 4px solid #8B4513;">${user.address}</p>
+                <p style="padding: 10px; background: #f9f9f9; border-left: 4px solid #8B4513;">${
+                  user.address
+                }</p>
               </div>
 
               <div style="margin: 20px 0;">
@@ -177,7 +195,9 @@ router.post(
                   <tfoot>
                     <tr style="background: #f5f5f5; font-weight: bold;">
                       <td colspan="3" style="padding: 10px; text-align: right; border: 1px solid #ddd;">Total:</td>
-                      <td style="padding: 10px; text-align: right; border: 1px solid #ddd; color: #8B4513;">$${req.body.total}</td>
+                      <td style="padding: 10px; text-align: right; border: 1px solid #ddd; color: #8B4513;">$${
+                        req.body.total
+                      }</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -188,7 +208,9 @@ router.post(
                   ? `
               <div style="margin: 20px 0;">
                 <h3 style="color: #8B4513;">Payment Proof</h3>
-                <p><a href="${proofImageUrl || proofPdfUrl}" style="color: #8B4513; text-decoration: underline;">View Payment Proof</a></p>
+                <p><a href="${
+                  proofImageUrl || proofPdfUrl
+                }" style="color: #8B4513; text-decoration: underline;">View Payment Proof</a></p>
               </div>
               `
                   : ""
@@ -200,8 +222,16 @@ router.post(
               <div style="margin: 20px 0;">
                 <h3 style="color: #8B4513;">Transaction Details</h3>
                 <p><strong>Transaction ID:</strong> ${transactionId}</p>
-                ${payableOrderId ? `<p><strong>Order ID:</strong> ${payableOrderId}</p>` : ""}
-                ${invoiceId ? `<p><strong>Invoice ID:</strong> ${invoiceId}</p>` : ""}
+                ${
+                  payableOrderId
+                    ? `<p><strong>Order ID:</strong> ${payableOrderId}</p>`
+                    : ""
+                }
+                ${
+                  invoiceId
+                    ? `<p><strong>Invoice ID:</strong> ${invoiceId}</p>`
+                    : ""
+                }
               </div>
               `
                   : ""

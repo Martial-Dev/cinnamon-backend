@@ -1,4 +1,5 @@
-const admin = require("firebase-admin");
+const { getApps, initializeApp, cert } = require("firebase-admin/app");
+const { getStorage } = require("firebase-admin/storage");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
@@ -6,14 +7,16 @@ const serviceAccount = JSON.parse(
   process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
 );
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+// Modern check to see if firebase has been initialized in this session
+if (getApps().length === 0) {
+  initializeApp({
+    credential: cert(serviceAccount),
     storageBucket: "travemobile.appspot.com",
   });
 }
 
-const bucket = admin.storage().bucket();
+// Access bucket via explicit storage getter
+const bucket = getStorage().bucket();
 
 async function uploadImageToFirebase(
   fileBuffer,
@@ -41,4 +44,5 @@ async function uploadImageToFirebase(
   return `https://storage.googleapis.com/${bucket.name}/${filename}`;
 }
 
+// Export the function using standard CommonJS
 module.exports = uploadImageToFirebase;

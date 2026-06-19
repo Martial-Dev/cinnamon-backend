@@ -4,7 +4,7 @@ const upload = require("../middleware/Multer");
 const mongoose = require("mongoose");
 const Review = require("../models/Review");
 const User = require("../models/User");
-const uploadImageToFirebase = require("../utils/firebase");
+const uploadImageToFirebase = require("../utils/firebase").default;
 const checkAuth = require("../middleware/check-auth");
 
 const MAX_IMAGES = 5;
@@ -96,48 +96,59 @@ router.get("/:id", async (req, res) => {
 });
 
 // Create a new review
-router.post("/", checkAuth, upload.array("images", MAX_IMAGES), async (req, res) => {
-  try {
-    const { comment, rating, productId } = req.body;
-    const parsedRating = Number.parseInt(rating, 10);
-    if (!comment || !parsedRating || parsedRating < 1 || parsedRating > 5) {
-      return res.status(400).json({ message: "Rating and comment are required" });
-    }
-
-    const user = await User.findById(req.userData.userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const images = [];
-    if (req.files && req.files.length) {
-      for (const file of req.files) {
-        const url = await uploadImageToFirebase(file.buffer, file.originalname, "reviews");
-        images.push({ url });
+router.post(
+  "/",
+  checkAuth,
+  upload.array("images", MAX_IMAGES),
+  async (req, res) => {
+    try {
+      const { comment, rating, productId } = req.body;
+      const parsedRating = Number.parseInt(rating, 10);
+      if (!comment || !parsedRating || parsedRating < 1 || parsedRating > 5) {
+        return res
+          .status(400)
+          .json({ message: "Rating and comment are required" });
       }
+
+      const user = await User.findById(req.userData.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const images = [];
+      if (req.files && req.files.length) {
+        for (const file of req.files) {
+          const url = await uploadImageToFirebase(
+            file.buffer,
+            file.originalname,
+            "reviews",
+          );
+          images.push({ url });
+        }
+      }
+
+      const reviewData = {
+        authorId: req.userData.userId,
+        authorName: `${user.firstName} ${user.lastName}`,
+        comment: comment.trim(),
+        rating: parsedRating,
+        images,
+      };
+
+      if (productId && mongoose.Types.ObjectId.isValid(productId)) {
+        reviewData.productId = mongoose.Types.ObjectId(productId);
+      }
+
+      const review = new Review(reviewData);
+      await review.save();
+
+      res.status(201).json(formatReview(review));
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ message: "Could not create review" });
     }
-
-    const reviewData = {
-      authorId: req.userData.userId,
-      authorName: `${user.firstName} ${user.lastName}`,
-      comment: comment.trim(),
-      rating: parsedRating,
-      images,
-    };
-
-    if (productId && mongoose.Types.ObjectId.isValid(productId)) {
-      reviewData.productId = mongoose.Types.ObjectId(productId);
-    }
-
-    const review = new Review(reviewData);
-    await review.save();
-
-    res.status(201).json(formatReview(review));
-  } catch (error) {
-    console.error("Error creating review:", error);
-    res.status(500).json({ message: "Could not create review" });
-  }
-});
+  },
+);
 
 // Add a reply to a review
 router.post("/:id/replies", checkAuth, async (req, res) => {
@@ -182,8 +193,13 @@ router.put("/:id", checkAuth, async (req, res) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    if (review.authorId.toString() !== req.userData.userId && req.userData.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized to update this review" });
+    if (
+      review.authorId.toString() !== req.userData.userId &&
+      req.userData.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to update this review" });
     }
 
     if (comment) {
@@ -209,8 +225,13 @@ router.delete("/:id", checkAuth, async (req, res) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    if (review.authorId.toString() !== req.userData.userId && req.userData.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized to delete this review" });
+    if (
+      review.authorId.toString() !== req.userData.userId &&
+      req.userData.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this review" });
     }
 
     await review.deleteOne();

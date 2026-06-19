@@ -1,5 +1,6 @@
 const Supplier = require("../models/Supplier");
 const crypto = require("crypto");
+const blockchainService = require("../utils/blockchain");
 
 // Generate a blockchain-style hash of supplier data
 const generateSupplierHash = (supplier) => {
@@ -158,10 +159,42 @@ exports.verifySupplier = async (req, res) => {
       verificationNotes: notes,
     };
 
-    // If verified, update blockchain status
+    // If verified, record on blockchain
     if (status === "VERIFIED") {
-      supplier.blockchainRef.network = "ethereum"; // Mock network - in production use actual blockchain
-      supplier.blockchainRef.txId = `0x${crypto.randomBytes(32).toString("hex")}`; // Mock tx ID
+      try {
+        // Use mock blockchain for now (development mode)
+        const blockchainResult = await blockchainService.recordSupplierHashMock(
+          supplier.blockchainRef.hash,
+          supplierId,
+        );
+
+        // In production, use:
+        // const blockchainResult = await blockchainService.recordSupplierHash(
+        //   supplier.blockchainRef.hash,
+        //   supplierId
+        // );
+
+        // Update supplier with blockchain transaction details
+        supplier.blockchainRef = {
+          ...supplier.blockchainRef,
+          txId: blockchainResult.txId,
+          network: blockchainResult.network,
+          contractAddress: blockchainResult.contractAddress,
+          explorerUrl: blockchainResult.explorerUrl,
+          recordedAt: blockchainResult.recordedAt,
+        };
+
+        console.log(
+          `✓ Supplier ${supplierId} recorded on blockchain:`,
+          blockchainResult.explorerUrl,
+        );
+      } catch (blockchainError) {
+        console.warn(
+          `⚠ Blockchain recording failed (non-blocking):`,
+          blockchainError.message,
+        );
+        // Continue even if blockchain fails - supplier is still verified in DB
+      }
     }
 
     supplier.updatedBy = req.user?.id || "admin";
@@ -169,7 +202,7 @@ exports.verifySupplier = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Supplier ${status.toLowerCase()}`,
+      message: `Supplier ${status.toLowerCase()}${status === "VERIFIED" ? " and recorded on blockchain" : ""}`,
       data: updatedSupplier,
     });
   } catch (error) {

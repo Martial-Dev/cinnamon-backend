@@ -1,7 +1,31 @@
-node_modules
-travemobile-firebase-adminsdk-iuhas-8ebdc90eba.json
-.env
+# Node modules
+/node_modules
 
-# Uploads - Ignore uploaded files but keep directory structure
-uploads/recruitment-cvs/*
-!uploads/recruitment-cvs/.gitkeep
+# Compilation output
+/dist
+
+# pnpm deploy output
+/bundle
+
+# Hardhat Build Artifacts
+/artifacts
+
+# Hardhat compilation (v2) support directory
+/cache
+
+# Typechain output
+/types
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Hardhat coverage reports
+/coverage
+
+# Gas snapshot files
+/.gas-snapshot
+
+# Snapshot cheatcodes output
+/snapshots

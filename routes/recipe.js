@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/Multer");
 const Recipe = require("../models/recipe");
-const uploadImageToFirebase = require("../utils/firebase");
+const uploadImageToFirebase = require("../utils/firebase").default;
 const checkAuth = require("../middleware/check-auth"); // Optional: use for admin routes
 
 // CREATE a new recipe
@@ -13,7 +13,7 @@ router.post("/", checkAuth, upload.single("image"), async (req, res) => {
       imageUrl = await uploadImageToFirebase(
         req.file.buffer,
         req.file.originalname,
-        "recipes"
+        "recipes",
       );
     }
     const { title, description, ingredients, steps } = req.body;
@@ -74,7 +74,7 @@ router.put("/:id", checkAuth, upload.single("image"), async (req, res) => {
       updateData.imageUrl = await uploadImageToFirebase(
         req.file.buffer,
         req.file.originalname,
-        "recipes"
+        "recipes",
       );
     }
     const recipe = await Recipe.findByIdAndUpdate(req.params.id, updateData, {
