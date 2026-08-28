@@ -4,12 +4,12 @@ const supplierController = require("../controllers/supplierController");
 const checkAuth = require("../middleware/check-auth");
 
 // Public routes
+router.post("/", supplierController.createSupplier);
 router.get("/", supplierController.getSuppliers);
 router.get("/country/:country", supplierController.getSupplierByCountry);
 router.get("/:id", supplierController.getSupplierById);
 
 // Protected routes - require authentication
-router.post("/", checkAuth, supplierController.createSupplier);
 router.put("/:id", checkAuth, supplierController.updateSupplier);
 router.delete("/:id", checkAuth, supplierController.deleteSupplier);
 

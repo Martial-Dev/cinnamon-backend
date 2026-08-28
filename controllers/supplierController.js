@@ -162,17 +162,10 @@ exports.verifySupplier = async (req, res) => {
     // If verified, record on blockchain
     if (status === "VERIFIED") {
       try {
-        // Use mock blockchain for now (development mode)
-        const blockchainResult = await blockchainService.recordSupplierHashMock(
+        const blockchainResult = await blockchainService.recordSupplierHash(
           supplier.blockchainRef.hash,
           supplierId,
         );
-
-        // In production, use:
-        // const blockchainResult = await blockchainService.recordSupplierHash(
-        //   supplier.blockchainRef.hash,
-        //   supplierId
-        // );
 
         // Update supplier with blockchain transaction details
         supplier.blockchainRef = {
@@ -202,7 +195,9 @@ exports.verifySupplier = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Supplier ${status.toLowerCase()}${status === "VERIFIED" ? " and recorded on blockchain" : ""}`,
+      message: `Supplier ${status.toLowerCase()}${
+        status === "VERIFIED" ? " and recorded on blockchain" : ""
+      }`,
       data: updatedSupplier,
     });
   } catch (error) {
