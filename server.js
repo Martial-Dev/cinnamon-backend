@@ -65,8 +65,8 @@ const publicVerificationRoutes = require("./routes/public-verification.js");
 const blockchainService = require("./utils/blockchain");
 const batchBlockchainService = require("./utils/batchBlockchain");
 const movementAnchorService = require("./services/movementAnchorService");
-const SupplierRegistryABI =
-  require("../blockchain/artifacts/contracts/SupplierRegistry.sol/SupplierRegistry.json").abi;
+// Copied from blockchain/artifacts so the backend deploys on its own.
+const SupplierRegistryABI = require("./abi/SupplierRegistry.json").abi;
 
 const checkAuth = require("./middleware/check-auth.js");
 
