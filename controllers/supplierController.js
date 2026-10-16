@@ -14,9 +14,49 @@ const generateSupplierHash = (supplier) => {
   return crypto.createHash("sha256").update(dataString).digest("hex");
 };
 
+// Fields a supplier may submit when applying. Status, ratings, reviews,
+// verification and audit fields are set by Canela Ceylon staff only.
+const SUPPLIER_APPLICATION_FIELDS = [
+  "supplierName",
+  "businessLicense",
+  "registrationNumber",
+  "contactPerson",
+  "email",
+  "phone",
+  "address",
+  "city",
+  "country",
+  "province",
+  "district",
+  "village",
+  "zipCode",
+  "publicDisplay",
+  "publicName",
+  "publicProducerId",
+  "publicIdentificationConsent",
+  "publicLocationPrecision",
+  "companyDescription",
+  "yearEstablished",
+  "companySize",
+  "products",
+  "bankName",
+  "accountHolder",
+  "accountNumber",
+  "swift",
+  "paymentTerms",
+  "certifications",
+];
+
+exports.pickSupplierApplication = (body = {}) =>
+  Object.fromEntries(
+    SUPPLIER_APPLICATION_FIELDS.filter((field) => body[field] !== undefined).map(
+      (field) => [field, body[field]],
+    ),
+  );
+
 exports.createSupplier = async (req, res) => {
   try {
-    const supplierData = req.body;
+    const supplierData = exports.pickSupplierApplication(req.body);
 
     // Generate blockchain hash
     const hash = generateSupplierHash(supplierData);

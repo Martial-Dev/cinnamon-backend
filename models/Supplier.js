@@ -18,7 +18,25 @@ const supplierSchema = new mongoose.Schema(
     address: { type: String, required: true },
     city: { type: String, required: true },
     country: { type: String, required: true },
+    province: String,
+    district: String,
+    // Village or town of the farm. Shown publicly only at "village" precision.
+    village: { type: String, trim: true },
     zipCode: String,
+
+    publicDisplay: {
+      type: String,
+      enum: ["anonymous", "producerId", "firstName", "fullName"],
+      default: "anonymous",
+    },
+    publicName: { type: String, trim: true },
+    publicProducerId: { type: String, trim: true },
+    publicIdentificationConsent: { type: Boolean, default: false },
+    publicLocationPrecision: {
+      type: String,
+      enum: ["country", "province", "district", "village", "exact"],
+      default: "country",
+    },
 
     // Company Details
     companyDescription: String,

@@ -11,7 +11,7 @@ exports.recordHashOnBlockchain = async (req, res) => {
     );
     res.status(201).json(proof);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 };
 

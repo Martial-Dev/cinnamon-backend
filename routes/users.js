@@ -4,9 +4,33 @@ const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const transporter = require("../utils/mailer");
+const checkAuth = require("../middleware/check-auth");
+const requireAdmin = require("../middleware/require-admin");
+
+// Fields a user may change on their own profile. role and password are
+// deliberately absent: role is admin-managed, password uses the reset flow.
+const PROFILE_FIELDS = [
+  "firstName",
+  "lastName",
+  "email",
+  "userName",
+  "address",
+  "postalCode",
+  "contactNo",
+];
+
+const requireSelfOrAdmin = (req, res, next) => {
+  if (
+    req.userData?.role === "admin" ||
+    String(req.userData?.userId) === String(req.params.id)
+  ) {
+    return next();
+  }
+  return res.status(403).json({ message: "You can only access your own account." });
+};
 
 // Debug endpoint to check environment and mailer status
-router.get("/debug/config", async (req, res) => {
+router.get("/debug/config", checkAuth, requireAdmin, async (req, res) => {
   try {
     const env = {
       MONGODB_URI: !!process.env.MONGODB_URI,
@@ -91,7 +115,7 @@ router.post("/", async (req, res) => {
 });
 
 // Get a specific user by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", checkAuth, requireSelfOrAdmin, async (req, res) => {
   const userId = req.params.id;
 
   try {
@@ -106,14 +130,19 @@ router.get("/:id", async (req, res) => {
 });
 
 // Update user details
-router.put("/:id", async (req, res) => {
+router.put("/:id", checkAuth, requireSelfOrAdmin, async (req, res) => {
   const userId = req.params.id;
-  const updates = req.body;
+  const updates = Object.fromEntries(
+    PROFILE_FIELDS.filter((field) => req.body?.[field] !== undefined).map(
+      (field) => [field, String(req.body[field]).trim()],
+    ),
+  );
 
   try {
     const updatedUser = await User.findByIdAndUpdate(userId, updates, {
       new: true,
-    });
+      runValidators: true,
+    }).select("-password");
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -124,7 +153,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete a user
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", checkAuth, requireAdmin, async (req, res) => {
   const userId = req.params.id;
 
   try {

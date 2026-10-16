@@ -1,6 +1,5 @@
 const crypto = require("crypto");
 const BlockchainProof = require("../models/BlockchainProof");
-const blockchainUtil = require("../utils/blockchain");
 
 class HashService {
   generatePOHash(po) {
@@ -26,42 +25,29 @@ class HashService {
   }
 
   async recordOnBlockchain(documentType, documentId, dataHash, materials = []) {
-    // For development use mock recording
-    const result = await blockchainUtil.recordSupplierHashMock(
-      dataHash,
-      String(documentId),
+    const error = new Error(
+      "On-chain proof recording is not configured for purchase orders.",
     );
-
-    // Save proof record in DB
-    const proof = new BlockchainProof({
-      documentType,
-      documentId,
-      dataHash,
-      txId: result.txId,
-      network: result.network,
-      contractAddress: result.contractAddress,
-      explorerUrl: result.explorerUrl,
-      verified: true,
-      materials: materials.map((m) => ({
-        materialType: m.materialType,
-        batchId: m.batchId,
-        materialHash: m.hash,
-      })),
-      recordedAt: result.recordedAt,
-    });
-
-    await proof.save();
-    return proof;
+    error.statusCode = 503;
+    error.code = "PO_BLOCKCHAIN_NOT_CONFIGURED";
+    throw error;
   }
 
   async getProofByDocument(documentType, documentId) {
-    return BlockchainProof.findOne({ documentType, documentId });
+    return BlockchainProof.findOne({
+      documentType,
+      documentId,
+      network: { $ne: "polygon-mock" },
+    });
   }
 
-  async verifyHash(documentType, documentId, hash) {
-    const proof = await this.getProofByDocument(documentType, documentId);
-    if (!proof) return { verified: false };
-    return { verified: proof.dataHash === hash, proof };
+  async verifyHash() {
+    return {
+      verificationStatus: "NOT_CONFIGURED",
+      verified: false,
+      message:
+        "Purchase-order hashes are not currently verifiable on the configured blockchain contract.",
+    };
   }
 }
 
